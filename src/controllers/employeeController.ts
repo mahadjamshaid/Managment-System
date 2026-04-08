@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { db } from "../db";
 import { employees } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { eq, count, ilike, or } from "drizzle-orm";
+import { paginationSchema } from "../schemas/paginationSchema";
 
 export const createEmployee = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -15,8 +16,44 @@ export const createEmployee = async (req: Request, res: Response, next: NextFunc
 
 export const getAllEmployees = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const allEmployees = await db.select().from(employees);
-    res.json(allEmployees);
+    const parsed = paginationSchema.parse(req.query);
+    
+    // Step 7 logic: Prevent invalid values and huge limits
+    const page = Math.max(1, Number(parsed.page));
+    const limit = Math.min(50, Number(parsed.limit));
+    const offset = (page - 1) * limit;
+
+    const searchTerm = parsed.search?.trim();
+
+    const whereClause = searchTerm
+      ? or(
+          ilike(employees.name, `%${searchTerm}%`),
+          ilike(employees.email, `%${searchTerm}%`)
+        )
+      : undefined;
+
+    // Fetch data with limit, offset and whereClause
+    const data = await db.select()
+      .from(employees)
+      .where(whereClause)
+      .limit(limit)
+      .offset(offset);
+
+    // Step 5 logic: Fetch total count with whereClause
+    const totalResult = await db.select({ count: count() })
+      .from(employees)
+      .where(whereClause);
+    
+    const total = totalResult[0].count;
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      page,
+      limit,
+      total,
+      totalPages,
+      data
+    });
   } catch (error) {
     console.error("Error fetching employees:", error);
     next(error);

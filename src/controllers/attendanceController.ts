@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { db } from "../db";
 import { attendance, employees } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
+import { paginationSchema } from "../schemas/paginationSchema";
 
 export const checkIn = async (req: Request, res: Response, next: NextFunction) => {
   const { employeeId, status } = req.body;
@@ -82,8 +83,28 @@ export const checkOut = async (req: Request, res: Response, next: NextFunction) 
 
 export const getAllAttendance = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const records = await db.select().from(attendance);
-    res.json(records);
+    const parsed = paginationSchema.parse(req.query);
+
+    const page = Math.max(1, Number(parsed.page));
+    const limit = Math.min(50, Number(parsed.limit));
+    const offset = (page - 1) * limit;
+
+    const data = await db.select()
+      .from(attendance)
+      .limit(limit)
+      .offset(offset);
+
+    const totalResult = await db.select({ count: count() }).from(attendance);
+    const total = totalResult[0].count;
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      page,
+      limit,
+      total,
+      totalPages,
+      data
+    });
   } catch (error) {
     console.error("Error fetching all attendance:", error);
     next(error);

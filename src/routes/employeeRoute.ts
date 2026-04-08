@@ -61,13 +61,56 @@ router.post("/", validate(createEmployeeSchema), createEmployee);
  * @swagger
  * /employees:
  *   get:
- *     summary: Get all employees
+ *     summary: Get all employees with pagination
  *     tags: [Employees]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         required: false
+ *         description: Page number (default is 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           example: 10
+ *         required: false
+ *         description: Number of records per page (default is 10)
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *           example: John
+ *         required: false
+ *         description: Search by name or email
  *     responses:
  *       200:
- *         description: List of employees
+ *         description: Paginated list of employees
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 page:
+ *                   type: integer
+ *                   example: 1
+ *                 limit:
+ *                   type: integer
+ *                   example: 10
+ *                 total:
+ *                   type: integer
+ *                   example: 42
+ *                 totalPages:
+ *                   type: integer
+ *                   example: 5
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Employee'
  */
 router.get("/", getAllEmployees);
 

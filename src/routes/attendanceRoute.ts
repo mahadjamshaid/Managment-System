@@ -84,13 +84,49 @@ router.post("/check-out", validate(checkOutSchema), checkOut);
  * @swagger
  * /attendance:
  *   get:
- *     summary: Get all attendance records
+ *     summary: Get all attendance records with pagination
  *     tags: [Attendance]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         required: false
+ *         description: Page number (default is 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           example: 10
+ *         required: false
+ *         description: Number of records per page (default is 10)
  *     responses:
  *       200:
- *         description: List of attendance records
+ *         description: Paginated list of attendance records
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 page:
+ *                   type: integer
+ *                   example: 1
+ *                 limit:
+ *                   type: integer
+ *                   example: 10
+ *                 total:
+ *                   type: integer
+ *                   example: 150
+ *                 totalPages:
+ *                   type: integer
+ *                   example: 15
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Attendance'
  */
 router.get("/", getAllAttendance);
 
