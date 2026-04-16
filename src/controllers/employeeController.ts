@@ -3,6 +3,7 @@ import { db } from "../db";
 import { employees } from "../db/schema";
 import { eq, count, ilike, or } from "drizzle-orm";
 import { paginationSchema } from "../schemas/paginationSchema";
+import { postgresError } from "../types";
 
 export const createEmployee = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -10,6 +11,12 @@ export const createEmployee = async (req: Request, res: Response, next: NextFunc
     res.status(201).json(newEmployee[0]);
   } catch (error) {
     console.error("Error creating employee:", error);
+
+    const pgError = error as postgresError;
+
+    if (pgError.code === "23505"){
+      return res.status(409).json({error:"Employee already exists"});
+    }
     next(error);
   }
 };
@@ -17,7 +24,7 @@ export const createEmployee = async (req: Request, res: Response, next: NextFunc
 export const getAllEmployees = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const parsed = paginationSchema.parse(req.query);
-    
+
     // Step 7 logic: Prevent invalid values and huge limits
     const page = Math.max(1, Number(parsed.page));
     const limit = Math.min(50, Number(parsed.limit));
@@ -27,9 +34,9 @@ export const getAllEmployees = async (req: Request, res: Response, next: NextFun
 
     const whereClause = searchTerm
       ? or(
-          ilike(employees.name, `%${searchTerm}%`),
-          ilike(employees.email, `%${searchTerm}%`)
-        )
+        ilike(employees.name, `%${searchTerm}%`),
+        ilike(employees.email, `%${searchTerm}%`)
+      )
       : undefined;
 
     // Fetch data with limit, offset and whereClause
@@ -43,7 +50,7 @@ export const getAllEmployees = async (req: Request, res: Response, next: NextFun
     const totalResult = await db.select({ count: count() })
       .from(employees)
       .where(whereClause);
-    
+
     const total = totalResult[0].count;
     const totalPages = Math.ceil(total / limit);
 
