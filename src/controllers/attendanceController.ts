@@ -1,11 +1,11 @@
 ﻿import { Request, Response, NextFunction } from "express";
-import { db } from "../db";
-import { attendance, department, employees } from "../db/schema";
+import { db } from "../db/index.js";
+import { attendance, department, employees } from "../db/schema.js";
 import { eq, and, count, desc } from "drizzle-orm";
-import { paginationSchema } from "../schemas/paginationSchema";
-import { updateAttendanceSchema } from "../schemas/updateAttendance.schema";
-import { getTodayDateString } from "../utils/dateUtils";
-import { deriveStatus } from "../utils/attendance.utils";
+import { paginationSchema } from "../schemas/paginationSchema.js";
+import { updateAttendanceSchema } from "../schemas/updateAttendance.schema.js";
+import { getTodayDateString } from "../utils/dateUtils.js";
+import { deriveStatus } from "../utils/attendance.utils.js";
 
 // CHECK IN 
 export const adminCheckIn = async (req: Request, res: Response, next: NextFunction) => {

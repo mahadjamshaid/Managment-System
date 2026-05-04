@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { analyzeShiftTiming } from "../utils/shiftRules";
+import { analyzeShiftTiming } from "../utils/shiftRules.js";
 
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use HH:mm time format");
 

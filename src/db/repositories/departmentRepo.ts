@@ -1,5 +1,5 @@
 import { eq, asc, InferSelectModel } from "drizzle-orm";
-import { department, shift } from "../schema";
+import { department, shift } from "../schema.js";
 
 export type DepartmentRow = InferSelectModel<typeof department>;
 export type ShiftRow = InferSelectModel<typeof shift>;

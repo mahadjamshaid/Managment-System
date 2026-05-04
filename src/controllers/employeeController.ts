@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
-import { db } from "../db";
-import { employees } from "../db/schema";
+import { db } from "../db/index.js";
+import { employees } from "../db/schema.js";
 import { eq, count, ilike, or, and, not } from "drizzle-orm";
-import { paginationSchema } from "../schemas/paginationSchema";
-import { postgresError } from "../types/types";
+import { paginationSchema } from "../schemas/paginationSchema.js";
+import { postgresError } from "../types/types.js";
 
 export const createEmployee = async (req: Request, res: Response, next: NextFunction) => {
   const { email } = req.body;

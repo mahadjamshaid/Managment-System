@@ -4,7 +4,7 @@ import {
     updateDepartmentSchema,
     assignShiftBodySchema,
     assignShiftSchema,
-    departmentParamsSchema } from "../schemas/assignShiftSchema"
+    departmentParamsSchema } from "../schemas/assignShiftSchema.js"
 
 export type CreateDepartmentType = z.infer<typeof createDepartmentSchema>
 export type UpdateDepartmentType = z.infer<typeof updateDepartmentSchema>

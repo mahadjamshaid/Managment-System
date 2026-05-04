@@ -1,8 +1,8 @@
-import { db } from "../db";
-import { admins, employees } from "../db/schema";
+import { admins, employees } from "../db/schema.js";
 import { eq, or } from "drizzle-orm";
 import crypto from "crypto";
 import bcrypt from "bcrypt";
+import { db } from "../db/index.js";
 
 export const findUserByEmail = async (email: string) => {
   // Check admins first

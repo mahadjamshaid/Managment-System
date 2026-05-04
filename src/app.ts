@@ -1,10 +1,10 @@
 ﻿import express from "express";
 import cors from "cors";
-import authRoutes from "./routes/authRoute";
-import employeeRoutes from "./routes/employeeRoute";
-import attendanceRoutes from "./routes/attendanceRoute";
-import departmentRoutes from "./routes/departmentRoutes";
-import { errorHandler } from "./middleware/errorHandler";
+import authRoutes from "./routes/authRoute.js";
+import employeeRoutes from "./routes/employeeRoute.js";
+import attendanceRoutes from "./routes/attendanceRoute.js";
+import departmentRoutes from "./routes/departmentRoutes.js";
+import { errorHandler } from "./middleware/errorHandler.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 

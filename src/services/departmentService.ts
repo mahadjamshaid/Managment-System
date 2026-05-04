@@ -1,14 +1,14 @@
-import { db } from "../db";
-import { ApiError } from "../errors/ApiError";
-import { departmentRepo } from "../db/repositories/departmentRepo";
-import { normalizeName, buildShiftName } from "../utils/departmentUtils";
-import { shiftRepo } from "../db/repositories/shiftRepo";
-import { toDepartmentResponse } from "../dto/departmentDto";
+import { ApiError } from "../errors/ApiError.js";
+import { departmentRepo } from "../db/repositories/departmentRepo.js";
+import { normalizeName, buildShiftName } from "../utils/departmentUtils.js";
+import { shiftRepo } from "../db/repositories/shiftRepo.js";
+import { toDepartmentResponse } from "../dto/departmentDto.js";
 import {
   CreateDepartmentType,
   UpdateDepartmentType,
   AssignShiftBodyType
-} from "../types/departmentTypes";
+} from "../types/departmentTypes.js";
+import { db } from "../db/index.js";
 
 export const departmentService = {
   async getAllDepartments() {

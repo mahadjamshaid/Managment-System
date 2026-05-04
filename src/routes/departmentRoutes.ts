@@ -5,14 +5,14 @@ import {
   getDepartmentById,
   getDepartments,
   updateDepartment,
-} from "../controllers/departmentController";
-import { authenticateToken, authorize } from "../middleware/auth";
-import { validate } from "../middleware/validate";
+} from "../controllers/departmentController.js";
+import { authenticateToken, authorize } from "../middleware/auth.js";
+import { validate } from "../middleware/validate.js";
 import {
   assignShiftBodySchema,
   createDepartmentSchema,
   updateDepartmentSchema,
-} from "../schemas/assignShiftSchema";
+} from "../schemas/assignShiftSchema.js";
 
 const router = Router();
 router.use(authenticateToken);

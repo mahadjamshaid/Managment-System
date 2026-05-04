@@ -1,7 +1,7 @@
-import { db } from "./index";
-import { admins } from "./schema";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
+import { db } from "./index.js";
+import { admins } from "./schema.js";
 
 dotenv.config();
 

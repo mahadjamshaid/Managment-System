@@ -10,16 +10,16 @@ import {
   getMyRecord,
   getAdminStats,
   updateAttendance,
-} from "../controllers/attendanceController";
-import { validate } from "../middleware/validate";
-import { authenticateToken, authorize } from "../middleware/auth";
+} from "../controllers/attendanceController.js";
+import { validate } from "../middleware/validate.js";
+import { authenticateToken, authorize } from "../middleware/auth.js";
 import {
   checkInSchema,
   checkOutSchema,
   employeeCheckInSchema,
   employeeCheckOutSchema,
-} from "../schemas/attendanceSchema";
-import { updateAttendanceSchema } from "../schemas/updateAttendance.schema";
+} from "../schemas/attendanceSchema.js";
+import { updateAttendanceSchema } from "../schemas/updateAttendance.schema.js";
 
 const router = Router();
 

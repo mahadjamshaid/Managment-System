@@ -1,6 +1,6 @@
-import { DepartmentRow, ShiftRow } from "../db/repositories/departmentRepo";
-import { formatDepartmentName } from "../utils/departmentUtils";
-import { analyzeShiftTiming } from "../utils/shiftRules";
+import { DepartmentRow, ShiftRow } from "../db/repositories/departmentRepo.js";
+import { formatDepartmentName } from "../utils/departmentUtils.js";
+import { analyzeShiftTiming } from "../utils/shiftRules.js";
 
 const toShiftResponse = (shift: ShiftRow | null) => {
   if (!shift) return null;

@@ -1,6 +1,6 @@
 import { InferSelectModel } from "drizzle-orm";
-import { admins, employees } from "../db/schema";
-import { updateAttendanceSchema } from "../schemas/updateAttendance.schema";
+import { admins, employees } from "../db/schema.js";
+import { updateAttendanceSchema } from "../schemas/updateAttendance.schema.js";
 import { z } from "zod";
 
 export interface JwtPayload {

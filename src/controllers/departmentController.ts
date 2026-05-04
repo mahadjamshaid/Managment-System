@@ -4,9 +4,9 @@ import {
   updateDepartmentSchema,
   assignShiftSchema,
   departmentParamsSchema
-} from "../schemas/assignShiftSchema";
-import { ApiError } from "../errors/ApiError";
-import { departmentService } from "../services/departmentService";
+} from "../schemas/assignShiftSchema.js";
+import { ApiError } from "../errors/ApiError.js";
+import { departmentService } from "../services/departmentService.js";
 
 export const getDepartments = async (req: Request, res: Response, next: NextFunction) => {
   try {

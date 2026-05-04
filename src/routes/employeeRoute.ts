@@ -5,10 +5,10 @@ import {
   getEmployeeById,
   updateEmployee,
   deleteEmployee,
-} from "../controllers/employeeController";
-import { validate } from "../middleware/validate";
-import { authenticateToken, authorize } from "../middleware/auth";
-import { createEmployeeSchema, updateEmployeeSchema } from "../schemas/employeeSchema";
+} from "../controllers/employeeController.js";
+import { validate } from "../middleware/validate.js";
+import { authenticateToken, authorize } from "../middleware/auth.js";
+import { createEmployeeSchema, updateEmployeeSchema } from "../schemas/employeeSchema.js";
 
 const router = Router();
 

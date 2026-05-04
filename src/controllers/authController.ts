@@ -1,14 +1,14 @@
 ﻿import { Request, Response } from "express";
-import { db } from "../db";
-import { admins, employees } from "../db/schema";
+import { db } from "../db/index.js";
+import { admins, employees } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
-import { Admin, Employee } from "../types/types";
-import * as authService from "../services/authService";
-import { sendEmail } from "../utils/sendgrid";
+import { Admin, Employee } from "../types/types.js";
+import * as authService from "../services/authService.js";
+import { sendEmail } from "../utils/sendgrid.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
