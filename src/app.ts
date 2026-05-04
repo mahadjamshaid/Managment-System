@@ -1,8 +1,9 @@
-import express from "express";
+﻿import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/authRoute";
 import employeeRoutes from "./routes/employeeRoute";
 import attendanceRoutes from "./routes/attendanceRoute";
+import departmentRoutes from "./routes/departmentRoutes";
 import { errorHandler } from "./middleware/errorHandler";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
@@ -43,13 +44,17 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-app.use(cors());
+app.use(cors({
+  origin:"http://localhost:5173",
+  credentials:true,
+}));
 app.use(express.json());
 
 // Routes
 app.use("/auth", authRoutes);
 app.use("/employees", employeeRoutes);
 app.use("/attendance", attendanceRoutes);
+app.use("/departments", departmentRoutes);
 
 // Simple health check
 app.get("/", (req, res) => {
@@ -60,3 +65,4 @@ app.get("/", (req, res) => {
 app.use(errorHandler);
 
 export default app;
+

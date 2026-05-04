@@ -1,36 +1,56 @@
 import { Request, Response, NextFunction } from "express";
+import bcrypt from "bcrypt";
 import { db } from "../db";
 import { employees } from "../db/schema";
-import { eq, count, ilike, or } from "drizzle-orm";
+import { eq, count, ilike, or, and, not } from "drizzle-orm";
 import { paginationSchema } from "../schemas/paginationSchema";
-import { postgresError } from "../types";
+import { postgresError } from "../types/types";
 
 export const createEmployee = async (req: Request, res: Response, next: NextFunction) => {
+  const { email } = req.body;
+
   try {
-    const newEmployee = await db.insert(employees).values(req.body).returning();
-    res.status(201).json(newEmployee[0]);
-  } catch (error) {
-    console.error("Error creating employee:", error);
+    // Check if employee with this email already exists
+    const [existingEmployee] = await db.select().from(employees).where(eq(employees.email, email)).limit(1);
 
-    const pgError = error as postgresError;
-
-    if (pgError.code === "23505"){
-      return res.status(409).json({error:"Employee already exists"});
+    if (existingEmployee) {
+      return res.status(400).json({ error: "Employee with this email already exists" });
     }
+
+    const { password, ...employeeData } = req.body;
+
+    let hashedPassword = undefined;
+    if (password) {
+      hashedPassword = await bcrypt.hash(password, 10);
+    }
+
+    const [newEmployee] = await db.insert(employees).values({
+      ...employeeData,
+      password: hashedPassword,
+    }).returning();
+
+    res.status(201).json(newEmployee);
+  } catch (error) {
     next(error);
   }
 };
 
 export const getAllEmployees = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const parsed = paginationSchema.parse(req.query);
+    const parsed = paginationSchema.safeParse(req.query);
+
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid query parameters" })
+    }
+
+    const { page, limit, search } = parsed.data
 
     // Step 7 logic: Prevent invalid values and huge limits
-    const page = Math.max(1, Number(parsed.page));
-    const limit = Math.min(50, Number(parsed.limit));
-    const offset = (page - 1) * limit;
+    const safePage = Math.max(1, Number(page));
+    const safeLimit = Math.min(50, Number(limit));
+    const offset = (safePage - 1) * safeLimit;
 
-    const searchTerm = parsed.search?.trim();
+    const searchTerm = search?.trim();
 
     const whereClause = searchTerm
       ? or(
@@ -43,7 +63,7 @@ export const getAllEmployees = async (req: Request, res: Response, next: NextFun
     const data = await db.select()
       .from(employees)
       .where(whereClause)
-      .limit(limit)
+      .limit(safeLimit)
       .offset(offset);
 
     // Step 5 logic: Fetch total count with whereClause
@@ -52,17 +72,17 @@ export const getAllEmployees = async (req: Request, res: Response, next: NextFun
       .where(whereClause);
 
     const total = totalResult[0].count;
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = Math.ceil(total / safeLimit);
 
     res.json({
-      page,
-      limit,
+      page: safePage,
+      limit: safeLimit,
       total,
       totalPages,
       data
     });
   } catch (error) {
-    console.error("Error fetching employees:", error);
+
     next(error);
   }
 };
@@ -79,28 +99,49 @@ export const getEmployeeById = async (req: Request, res: Response, next: NextFun
     }
     res.json(employee[0]);
   } catch (error) {
-    console.error("Error fetching employee by ID:", error);
     next(error);
   }
 };
 
 export const updateEmployee = async (req: Request, res: Response, next: NextFunction) => {
   const id = Number(req.params.id);
+  const { email } = req.body;
+
   if (isNaN(id)) {
     return res.status(400).json({ error: "Invalid ID format" });
   }
+
   try {
+    // If email is being updated, check if it's already in use by another employee
+    if (email) {
+      const [existingEmployee] = await db
+        .select()
+        .from(employees)
+        .where(and(eq(employees.email, email), not(eq(employees.id, id))))
+        .limit(1);
+
+      if (existingEmployee) {
+        return res.status(400).json({ error: "Email already in use by another employee" });
+      }
+    }
+
+    const { password, ...updateData } = req.body;
+
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
     const updatedEmployee = await db
       .update(employees)
-      .set(req.body)
+      .set(updateData)
       .where(eq(employees.id, id))
       .returning();
+
     if (!updatedEmployee.length) {
       return res.status(404).json({ error: "Employee not found" });
     }
     res.json(updatedEmployee[0]);
   } catch (error) {
-    console.error("Error updating employee:", error);
     next(error);
   }
 };
@@ -122,7 +163,6 @@ export const deleteEmployee = async (req: Request, res: Response, next: NextFunc
     }
     res.json({ message: "Employee marked as inactive (soft deleted)", data: updatedEmployee[0] });
   } catch (error) {
-    console.error("Error deleting employee:", error);
     next(error);
   }
 };

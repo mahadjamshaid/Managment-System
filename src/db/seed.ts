@@ -6,21 +6,24 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const seed = async () => {
-  const username = process.env.ADMIN_USERNAME;
+  const email = process.env.ADMIN_EMAIL;
   const password = process.env.ADMIN_PASSWORD;
 
-  if (!username || !password) {
-    console.error("ADMIN_USERNAME or ADMIN_PASSWORD not set in .env");
+  if (!email || !password) {
+    console.error("ADMIN_EMAIL or ADMIN_PASSWORD not set in .env");
     process.exit(1);
   }
 
-  console.log("Seeding admin user...");
+  const username = process.env.ADMIN_USERNAME || email.split("@")[0] || "admin";
+
+  console.log(`Seeding admin user: ${username} (${email})...`);
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     
     await db.insert(admins).values({
       username,
+      email,
       password: hashedPassword,
     }).onConflictDoNothing();
 

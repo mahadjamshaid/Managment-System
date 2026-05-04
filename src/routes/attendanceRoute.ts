@@ -1,13 +1,25 @@
 import { Router } from "express";
 import {
-  checkIn,
-  checkOut,
+  adminCheckIn,
+  adminCheckOut,
   getAllAttendance,
   getAttendanceByEmployeeId,
+  employeeCheckIn,
+  employeeCheckOut,
+  getEmployeeTodayAttendance,
+  getMyRecord,
+  getAdminStats,
+  updateAttendance,
 } from "../controllers/attendanceController";
 import { validate } from "../middleware/validate";
-import { authenticateToken } from "../middleware/auth";
-import { checkInSchema, checkOutSchema } from "../schemas/attendanceSchema";
+import { authenticateToken, authorize } from "../middleware/auth";
+import {
+  checkInSchema,
+  checkOutSchema,
+  employeeCheckInSchema,
+  employeeCheckOutSchema,
+} from "../schemas/attendanceSchema";
+import { updateAttendanceSchema } from "../schemas/updateAttendance.schema";
 
 const router = Router();
 
@@ -50,7 +62,7 @@ router.use(authenticateToken); // Protect all attendance routes
  *       400:
  *         description: Already checked in for today
  */
-router.post("/check-in", validate(checkInSchema), checkIn);
+router.post("/check-in", authorize(["admin"]), validate(checkInSchema), adminCheckIn);
 
 /**
  * @swagger
@@ -78,7 +90,7 @@ router.post("/check-in", validate(checkInSchema), checkIn);
  *       404:
  *         description: No check-in found for today
  */
-router.post("/check-out", validate(checkOutSchema), checkOut);
+router.post("/check-out", authorize(["admin"]), validate(checkOutSchema), adminCheckOut);
 
 /**
  * @swagger
@@ -128,26 +140,28 @@ router.post("/check-out", validate(checkOutSchema), checkOut);
  *                   items:
  *                     $ref: '#/components/schemas/Attendance'
  */
-router.get("/", getAllAttendance);
+router.get("/", authorize(["admin"]), getAllAttendance);
 
-/**
- * @swagger
- * /attendance/{employeeId}:
- *   get:
- *     summary: Get attendance records for a specific employee
- *     tags: [Attendance]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: employeeId
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Employee attendance records
- */
-router.get("/:employeeId", getAttendanceByEmployeeId);
+router.get("/admin/stats", authorize(["admin"]), getAdminStats);
+
+router.get("/employee/today", authorize(["employee"]), getEmployeeTodayAttendance);
+
+router.get("/employee/my-records", authorize(["employee"]), getMyRecord);
+
+router.get("/:employeeId", authorize(["admin"]), getAttendanceByEmployeeId);
+
+router.put(
+  "/:id",
+  authorize(["admin"]),
+  validate(updateAttendanceSchema),
+  updateAttendance
+);
+
+router.post("/employee/check-in", authorize(["employee"]), validate(employeeCheckInSchema), employeeCheckIn)
+
+router.post("/employee/check-out", authorize(["employee"]), validate(employeeCheckOutSchema), employeeCheckOut)
+
+// Parameterized routes moved above
+
 
 export default router;

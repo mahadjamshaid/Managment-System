@@ -7,12 +7,13 @@ import {
   deleteEmployee,
 } from "../controllers/employeeController";
 import { validate } from "../middleware/validate";
-import { authenticateToken } from "../middleware/auth";
+import { authenticateToken, authorize } from "../middleware/auth";
 import { createEmployeeSchema, updateEmployeeSchema } from "../schemas/employeeSchema";
 
 const router = Router();
 
 router.use(authenticateToken); // Protect all employee routes
+router.use(authorize(["admin"])); // Restrict all employee routes to admins only
 
 /**
  * @swagger
