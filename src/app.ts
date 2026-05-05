@@ -20,7 +20,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: "http://localhost:3000",
+        url: process.env.NODE_ENV === "production" ? "https://managment-system-production.up.railway.app" : "http://localhost:3000",
       },
     ],
     components: {
@@ -47,37 +47,24 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.LOCAL_FRONTEND_URL,
-]
-  .filter((origin): origin is string => typeof origin === "string")
-  .map((origin) =>
-    origin
-      .replace(/['"]/g, "")
-      .trim()
-      .replace(/\/$/, "")
-  );
+  "http://localhost:5173"
+].filter((origin): origin is string => Boolean(origin))
+ .map(origin => origin.replace(/['"]/g, '').replace(/\/$/, ''));
 
-if (allowedOrigins.length === 0) {
-  console.warn("⚠️ No CORS origins configured!");
-}
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    
+    const isAllowed = allowedOrigins.includes(origin);
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-
-      const normalizedOrigin = origin.trim().replace(/\/$/, "");
-      const isAllowed = allowedOrigins.includes(normalizedOrigin);
-
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        console.error("CORS BLOCKED ORIGIN:", origin);
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  })
-);
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
 // Routes
