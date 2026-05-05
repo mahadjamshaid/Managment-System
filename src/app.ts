@@ -55,10 +55,9 @@ app.use(cors({
     // Allow if no origin (like mobile apps or curl) or if it's in our allowed list
     if (!origin) return callback(null, true);
     
-    const isLocal = origin.startsWith('http://localhost');
     const isAllowed = allowedOrigins.includes(origin);
 
-    if (isAllowed || isLocal) {
+    if (isAllowed) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
