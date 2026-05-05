@@ -1,0 +1,1 @@
+ALTER TABLE "attendance" ADD COLUMN "admin_status" varchar(50);

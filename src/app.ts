@@ -47,6 +47,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.LOCAL_FRONTEND_URL,
+  "http://localhost:5173"
 ].filter((origin): origin is string => Boolean(origin))
  .map(origin => origin.replace(/['"]/g, '').replace(/\/$/, ''));
 

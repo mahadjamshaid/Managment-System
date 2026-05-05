@@ -3,7 +3,6 @@ import { db } from "../db/index.js";
 import { attendance, department, employees, shift } from "../db/schema.js";
 import { eq, and, count, desc, isNull, between } from "drizzle-orm";
 import { paginationSchema } from "../schemas/paginationSchema.js";
-import { updateAttendanceSchema } from "../schemas/updateAttendance.schema.js";
 import { getCurrentPKTTime, getPKTDateString, toPKT } from "../utils/time.utils.js";
 import { deriveCheckInStatus, calculateWorkMinutes, deriveFinalStatus } from "../utils/attendance.policy.js";
 import { getAttendanceStatusForDate } from "../services/attendanceService.js";
@@ -90,19 +89,27 @@ export const getAllAttendance = async (req: Request, res: Response, next: NextFu
     const data = await db.select({
       id: attendance.id,
       employeeId: attendance.employeeId,
-      date: attendance.date,
+      attendanceDate: attendance.attendanceDate, 
+      legacyDate: attendance.date,               
       status: attendance.status,
       checkInTime: attendance.checkInTime,
       checkOutTime: attendance.checkOutTime,
       employeeName: employees.name,
-      employeeDepartment: employees.departmentId
+      employeeDepartment: department.name
     })
       .from(attendance)
       .leftJoin(employees, eq(attendance.employeeId, employees.id))
+      .leftJoin(department, eq(employees.departmentId, department.id))
       .where(whereClause)
-      .orderBy(desc(attendance.date), desc(attendance.checkInTime))
+      .orderBy(desc(attendance.attendanceDate), desc(attendance.checkInTime))
       .limit(limit)
       .offset(offset);
+
+    // Transform data to ensure attendanceDate is always present for the frontend
+    const sanitizedRecords = data.map(record => ({
+      ...record,
+      attendanceDate: record.attendanceDate || (record.legacyDate ? record.legacyDate.toString() : getPKTDateString())
+    }));
 
     const totalResult = await db.select({ count: count() }).from(attendance).where(whereClause);
     const total = totalResult[0].count;
@@ -116,7 +123,7 @@ export const getAllAttendance = async (req: Request, res: Response, next: NextFu
         limit,
         total,
         totalPages,
-        records: data
+        records: sanitizedRecords
       }
     });
   } catch (error) {
@@ -473,143 +480,6 @@ export const getMyRecord = async (
   }
 };
 
-// Admin update the attendance manually 
-
-export const updateAttendance = async (req: Request, res: Response, next: NextFunction) => {
-  const id = Number(req.params.id);
-
-  if (isNaN(id)) {
-    return res.status(400).json({ error: "Invalid attendance id" });
-  }
-
-  const parsed = updateAttendanceSchema.safeParse(req.body);
-
-  if (!parsed.success) {
-    return res.status(400).json({
-      error: "Validation failed",
-      details: parsed.error.flatten(),
-    });
-  }
-
-  const data = parsed.data;
-
-  try {
-    const [record] = await db
-      .select()
-      .from(attendance)
-      .where(eq(attendance.id, id))
-      .limit(1);
-
-    if (!record) {
-      return res.status(404).json({ error: "Record not found" });
-    }
-
-    // 1. ABSENT OVERRIDE
-    if (data.status === "Absent") {
-      const [updated] = await db
-        .update(attendance)
-        .set({
-          status: "Absent",
-          checkInTime: null,
-          checkOutTime: null,
-          updatedAt: getCurrentPKTTime()
-        })
-        .where(eq(attendance.id, id))
-        .returning();
-
-      return res.status(200).json({
-        success: true,
-        message: "Marked as Absent",
-        data: updated,
-      });
-    }
-
-    // 2. NORMALIZE TIMES
-    const updatedCheckIn = data.checkInTime ? toPKT(new Date(data.checkInTime)) : (record.checkInTime ? new Date(record.checkInTime) : null);
-    const updatedCheckOut = data.checkOutTime ? toPKT(new Date(data.checkOutTime)) : (record.checkOutTime ? new Date(record.checkOutTime) : null);
-
-    if (updatedCheckIn && updatedCheckOut && updatedCheckOut < updatedCheckIn) {
-      return res.status(400).json({ error: "Check-out cannot be before check-in" });
-    }
-
-    // 3. FALLBACK LOGIC
-    let shiftStartTime: string;
-    let graceMinutes: number;
-    let breakMinutes: number;
-    let checkInStatus: string;
-
-    const hasSnapshot = record.shiftStartTime && 
-                        record.graceMinutes !== null && 
-                        record.breakMinutes !== null &&
-                        record.checkInStatus;
-
-    if (hasSnapshot) {
-      shiftStartTime = record.shiftStartTime!;
-      graceMinutes = record.graceMinutes!;
-      breakMinutes = record.breakMinutes!;
-      checkInStatus = record.checkInStatus!;
-    } else {
-      const [employeeShift] = await db
-        .select({
-          startTime: shift.startTime,
-          graceMinutes: shift.graceMinutes,
-          breakMinutes: shift.breakMinutes,
-        })
-        .from(shift)
-        .where(eq(shift.id, record.shiftId))
-        .limit(1);
-
-      if (!employeeShift) {
-        return res.status(400).json({ error: "Shift data not found for fallback" });
-      }
-
-      shiftStartTime = employeeShift.startTime;
-      graceMinutes = employeeShift.graceMinutes;
-      breakMinutes = employeeShift.breakMinutes ?? 0;
-      checkInStatus = record.status;
-    }
-
-    // 4. DERIVE STATUS
-    let finalCheckInStatus = checkInStatus;
-    let finalStatus = record.status;
-    let computedWorkMinutes = record.workMinutes;
-
-    if (updatedCheckIn) {
-      // Re-evaluate check-in status if time changed
-      finalCheckInStatus = deriveCheckInStatus(updatedCheckIn, shiftStartTime, graceMinutes);
-      
-      if (updatedCheckOut) {
-        computedWorkMinutes = calculateWorkMinutes(updatedCheckIn, updatedCheckOut, breakMinutes);
-        finalStatus = deriveFinalStatus(finalCheckInStatus, computedWorkMinutes);
-      } else {
-        finalStatus = finalCheckInStatus; // Active session
-        computedWorkMinutes = null;
-      }
-    }
-
-    const [updated] = await db
-      .update(attendance)
-      .set({
-        checkInTime: updatedCheckIn,
-        checkOutTime: updatedCheckOut,
-        checkInStatus: finalCheckInStatus,
-        status: finalStatus,
-        workMinutes: computedWorkMinutes,
-        updatedAt: getCurrentPKTTime(),
-      })
-      .where(eq(attendance.id, id))
-      .returning();
-
-    return res.status(200).json({
-      success: true,
-      message: "Attendance updated successfully",
-      data: updated,
-    });
-  } catch (error) {
-    console.error("Error updating attendance:", error);
-    next(error);
-  }
-};
 
 // Phase 3: Reporting APIs
 
@@ -687,71 +557,5 @@ export const getDepartmentAttendance = async (req: Request, res: Response, next:
   }
 };
 
-// Phase 4: Admin Features
-
-export const adminManualEntry = async (req: Request, res: Response, next: NextFunction) => {
-  const { employeeId, date, checkInTime, checkOutTime, status } = req.body;
-
-  try {
-    const [employee] = await db.select().from(employees).where(eq(employees.id, employeeId)).limit(1);
-    if (!employee) return res.status(404).json({ error: "Employee not found" });
-
-    // Check for existing record
-    const [existing] = await db.select().from(attendance)
-      .where(and(eq(attendance.employeeId, employeeId), eq(attendance.attendanceDate, date)))
-      .limit(1);
-
-    if (existing) return res.status(400).json({ error: "Record already exists for this date. Use update instead." });
-
-    // Fetch Shift for snapshot
-    const [employeeDepartment] = await db
-      .select({
-        shiftId: department.shiftId,
-        startTime: shift.startTime,
-        graceMinutes: shift.graceMinutes,
-        breakMinutes: shift.breakMinutes,
-      })
-      .from(department)
-      .leftJoin(shift, eq(department.shiftId, shift.id))
-      .where(eq(department.id, employee.departmentId))
-      .limit(1);
-
-    if (!employeeDepartment) return res.status(400).json({ error: "Shift data not found" });
-
-    const pktCheckIn = checkInTime ? toPKT(new Date(checkInTime)) : null;
-    const pktCheckOut = checkOutTime ? toPKT(new Date(checkOutTime)) : null;
-
-    let finalStatus = status;
-    let workMinutes = 0;
-
-    if (!status && pktCheckIn && pktCheckOut) {
-      const checkInStatus = deriveCheckInStatus(pktCheckIn, employeeDepartment.startTime!, employeeDepartment.graceMinutes!);
-      workMinutes = calculateWorkMinutes(pktCheckIn, pktCheckOut, employeeDepartment.breakMinutes!);
-      finalStatus = deriveFinalStatus(checkInStatus, workMinutes);
-    } else if (!status && pktCheckIn) {
-      finalStatus = deriveCheckInStatus(pktCheckIn, employeeDepartment.startTime!, employeeDepartment.graceMinutes!);
-    }
-
-    const [newRecord] = await db.insert(attendance).values({
-      employeeId,
-      shiftId: employeeDepartment.shiftId!,
-      attendanceDate: date,
-      date: date,
-      shiftStartTime: employeeDepartment.startTime,
-      graceMinutes: employeeDepartment.graceMinutes,
-      breakMinutes: employeeDepartment.breakMinutes,
-      checkInTime: pktCheckIn,
-      checkOutTime: pktCheckOut,
-      status: finalStatus || "Present",
-      workMinutes: workMinutes,
-      createdAt: getCurrentPKTTime(),
-      updatedAt: getCurrentPKTTime()
-    }).returning();
-
-    return res.status(201).json({ success: true, data: newRecord });
-  } catch (error) {
-    next(error);
-  }
-};
 
 

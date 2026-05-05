@@ -6,19 +6,17 @@ import {
   employeeCheckOut,
   getEmployeeTodayAttendance,
   getMyRecord,
-  updateAttendance,
   getAttendanceSummary,
   getEmployeeHistory,
   getDepartmentAttendance,
-  adminManualEntry,
 } from "../controllers/attendanceController.js";
+import { correctAttendance } from "../controllers/attendanceCorrectionController.js";
 import { validate } from "../middleware/validate.js";
 import { authenticateToken, authorize } from "../middleware/auth.js";
 import {
   employeeCheckInSchema,
   employeeCheckOutSchema,
 } from "../schemas/attendanceSchema.js";
-import { updateAttendanceSchema } from "../schemas/updateAttendance.schema.js";
 
 const router = Router();
 
@@ -30,8 +28,6 @@ router.use(authenticateToken); // Protect all attendance routes
  *   name: Attendance
  *   description: Attendance tracking
  */
-
-
 
 /**
  * @swagger
@@ -89,12 +85,8 @@ router.get("/employee/my-records", authorize(["employee"]), getMyRecord);
 
 router.get("/:employeeId", authorize(["admin"]), getAttendanceByEmployeeId);
 
-router.put(
-  "/:id",
-  authorize(["admin"]),
-  validate(updateAttendanceSchema),
-  updateAttendance
-);
+// UNIFIED CORRECTION ENDPOINT
+router.post("/correct", authorize(["admin"]), correctAttendance);
 
 router.post("/employee/check-in", authorize(["employee"]), validate(employeeCheckInSchema), employeeCheckIn)
 
@@ -104,9 +96,5 @@ router.get("/reports/summary", authorize(["admin"]), getAttendanceSummary);
 router.get("/reports/employee/:id", authorize(["admin"]), getEmployeeHistory);
 router.get("/reports/department/:id", authorize(["admin"]), getDepartmentAttendance);
 
-router.post("/admin/manual-entry", authorize(["admin"]), adminManualEntry);
-
-// Parameterized routes moved above
-
-
 export default router;
+
