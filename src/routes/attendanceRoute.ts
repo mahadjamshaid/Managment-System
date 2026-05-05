@@ -1,21 +1,20 @@
 import { Router } from "express";
 import {
-  adminCheckIn,
-  adminCheckOut,
   getAllAttendance,
   getAttendanceByEmployeeId,
   employeeCheckIn,
   employeeCheckOut,
   getEmployeeTodayAttendance,
   getMyRecord,
-  getAdminStats,
   updateAttendance,
+  getAttendanceSummary,
+  getEmployeeHistory,
+  getDepartmentAttendance,
+  adminManualEntry,
 } from "../controllers/attendanceController.js";
 import { validate } from "../middleware/validate.js";
 import { authenticateToken, authorize } from "../middleware/auth.js";
 import {
-  checkInSchema,
-  checkOutSchema,
   employeeCheckInSchema,
   employeeCheckOutSchema,
 } from "../schemas/attendanceSchema.js";
@@ -32,65 +31,7 @@ router.use(authenticateToken); // Protect all attendance routes
  *   description: Attendance tracking
  */
 
-/**
- * @swagger
- * /attendance/check-in:
- *   post:
- *     summary: Employee Check-In
- *     description: Record the start of an employee's workday.
- *     tags: [Attendance]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - employeeId
- *             properties:
- *               employeeId:
- *                 type: integer
- *               status:
- *                 type: string
- *                 enum: [Present, Absent, Late]
- *                 default: Present
- *     responses:
- *       201:
- *         description: Checked in successfully
- *       400:
- *         description: Already checked in for today
- */
-router.post("/check-in", authorize(["admin"]), validate(checkInSchema), adminCheckIn);
 
-/**
- * @swagger
- * /attendance/check-out:
- *   post:
- *     summary: Employee Check-Out
- *     description: Record the end of an employee's workday.
- *     tags: [Attendance]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - employeeId
- *             properties:
- *               employeeId:
- *                 type: integer
- *     responses:
- *       200:
- *         description: Checked out successfully
- *       404:
- *         description: No check-in found for today
- */
-router.post("/check-out", authorize(["admin"]), validate(checkOutSchema), adminCheckOut);
 
 /**
  * @swagger
@@ -142,8 +83,6 @@ router.post("/check-out", authorize(["admin"]), validate(checkOutSchema), adminC
  */
 router.get("/", authorize(["admin"]), getAllAttendance);
 
-router.get("/admin/stats", authorize(["admin"]), getAdminStats);
-
 router.get("/employee/today", authorize(["employee"]), getEmployeeTodayAttendance);
 
 router.get("/employee/my-records", authorize(["employee"]), getMyRecord);
@@ -160,6 +99,12 @@ router.put(
 router.post("/employee/check-in", authorize(["employee"]), validate(employeeCheckInSchema), employeeCheckIn)
 
 router.post("/employee/check-out", authorize(["employee"]), validate(employeeCheckOutSchema), employeeCheckOut)
+
+router.get("/reports/summary", authorize(["admin"]), getAttendanceSummary);
+router.get("/reports/employee/:id", authorize(["admin"]), getEmployeeHistory);
+router.get("/reports/department/:id", authorize(["admin"]), getDepartmentAttendance);
+
+router.post("/admin/manual-entry", authorize(["admin"]), adminManualEntry);
 
 // Parameterized routes moved above
 

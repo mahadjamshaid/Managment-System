@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, date, varchar, integer, unique, time } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, date, varchar, integer, unique, time, index } from "drizzle-orm/pg-core";
 
 export const shift = pgTable("shift", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -6,8 +6,7 @@ export const shift = pgTable("shift", {
   startTime: time("start_time").notNull(),
   endTime: time("end_time").notNull(),
   graceMinutes: integer("grace_minutes").notNull(),
-  breakStartTime: time("break_start_time"),
-  breakEndTime: time("break_end_time"),
+  breakMinutes: integer("break_minutes").notNull().default(0),
   createdAt: timestamp().defaultNow().notNull(),
   updatedAt: timestamp().defaultNow().notNull(),
 })
@@ -39,14 +38,21 @@ export const attendance = pgTable("attendance", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   employeeId: integer("employee_id").references(() => employees.id).notNull(),
   shiftId: integer("shift_id").references(() => shift.id).notNull(),
-  date: date("date").notNull(),
-  status: varchar("status", { length: 50 }).notNull(), // 'Present', 'Absent', 'Late'
+  date: date("date"), // Keep legacy date as nullable for compatibility
   checkInTime: timestamp("check_in_time"),
   checkOutTime: timestamp("check_out_time"),
+  attendanceDate: varchar("attendance_date", { length: 50 }),
+  shiftStartTime: varchar("shift_start_time", { length: 20 }),
+  graceMinutes: integer("grace_minutes"),
+  breakMinutes: integer("break_minutes"),
+  checkInStatus: varchar("check_in_status", { length: 50 }), // "Present" or "Late"
+  status: varchar("status", { length: 50 }).notNull(), // "Present", "Late", "HalfDay", "ShortDay", "Absent"
+  workMinutes: integer("work_minutes"), // Stored work duration
   createdAt: timestamp().defaultNow().notNull(),
   updatedAt: timestamp().defaultNow().notNull(),
 }, (table) => [
-  unique("attendance_employee_date_idx").on(table.employeeId, table.date, table.shiftId)
+  unique("attendance_employee_date_idx").on(table.employeeId, table.attendanceDate),
+  index("employee_id_check_out_idx").on(table.employeeId, table.checkOutTime)
 ]);
 
 export const admins = pgTable("admins", {

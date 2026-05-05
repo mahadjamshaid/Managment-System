@@ -12,8 +12,7 @@ const rawShiftTimingSchema = z.object({
   startTime: timeSchema,
   endTime: timeSchema,
   graceMinutes: z.coerce.number().int().min(0).max(240),
-  breakStartTime: optionalTimeSchema,
-  breakEndTime: optionalTimeSchema,
+  breakMinutes: z.coerce.number().int().min(0).max(120),
 });
 
 const applyShiftTimingRules = (

@@ -8,6 +8,34 @@
       "when": 1777894831736,
       "tag": "0000_cool_clea",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777978076233,
+      "tag": "0001_damp_yellow_claw",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777978442990,
+      "tag": "0002_needy_the_enforcers",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777979198149,
+      "tag": "0003_majestic_lady_deathstrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777979348261,
+      "tag": "0004_neat_baron_strucker",
+      "breakpoints": true
     }
   ]
 }

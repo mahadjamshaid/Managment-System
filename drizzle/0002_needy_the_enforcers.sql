@@ -1,0 +1,1 @@
+ALTER TABLE "shift" ADD COLUMN "break_minutes" integer DEFAULT 0 NOT NULL;
