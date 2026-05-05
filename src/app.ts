@@ -47,10 +47,24 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.LOCAL_FRONTEND_URL,
-].filter((origin): origin is string => Boolean(origin));
+].filter((origin): origin is string => Boolean(origin))
+ .map(origin => origin.replace(/['"]/g, '').replace(/\/$/, ''));
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // Allow if no origin (like mobile apps or curl) or if it's in our allowed list
+    if (!origin) return callback(null, true);
+    
+    const isVercel = origin.endsWith('.vercel.app');
+    const isLocal = origin.startsWith('http://localhost');
+    const isAllowed = allowedOrigins.includes(origin);
+
+    if (isAllowed || isVercel || isLocal) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 app.use(express.json());
