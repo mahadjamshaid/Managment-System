@@ -130,7 +130,74 @@ export const resetPassword = async (req: Request, res: Response) => {
 };
 
 export const signup = async (req: Request, res: Response) => {
+  // Logic to allow employees to create accounts themselves for now.
+  // We'll keep the restriction logic commented out for future use.
+  /*
   return res.status(403).json({
     error: "Employee accounts must be created by an admin with a department assignment",
   });
+  */
+
+  const { name, username, email, password, departmentId, role } = req.body;
+
+  // Frontend uses 'username', backend schema uses 'name'
+  const displayName = name || username;
+
+  if (!email || !password || !displayName) {
+    return res.status(400).json({ error: "Missing required fields: name/username, email, password" });
+  }
+
+  try {
+    // Check if user already exists
+    const [existingAdmin] = await db.select().from(admins).where(eq(admins.email, email)).limit(1);
+    const [existingEmployee] = await db.select().from(employees).where(eq(employees.email, email)).limit(1);
+
+    if (existingAdmin || existingEmployee) {
+      return res.status(400).json({ error: "User with this email already exists" });
+    }
+
+    // For now, we'll use departmentId 1 as a fallback if not provided
+    // This allows self-signup to work even if the frontend hasn't been updated yet
+    let finalDepartmentId = departmentId ? Number(departmentId) : 1;
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const [newEmployee] = await db.insert(employees).values({
+      name: displayName,
+      email,
+      password: hashedPassword,
+      departmentId: finalDepartmentId,
+      role: role || "employee",
+      status: "active",
+    }).returning();
+
+    // After signup, we automatically log them in by providing a token
+    const token = jwt.sign(
+      {
+        id: newEmployee.id,
+        email: newEmployee.email,
+        username: newEmployee.name,
+        role: "employee"
+      },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Employee account created successfully",
+      data: {
+        token,
+        role: "employee",
+        user: {
+          id: newEmployee.id,
+          name: newEmployee.name,
+          email: newEmployee.email
+        }
+      },
+    });
+  } catch (error) {
+    console.error("Signup error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 };
