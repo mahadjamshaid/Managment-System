@@ -47,8 +47,7 @@ export const departmentService = {
           startTime: payload.startTime,
           endTime: payload.endTime,
           graceMinutes: payload.graceMinutes,
-          breakStartTime: payload.breakStartTime || null,
-          breakEndTime: payload.breakEndTime || null,
+          breakMinutes: payload.breakMinutes || 0,
         },
         tx
       );
@@ -147,8 +146,7 @@ export const departmentService = {
           startTime: payload.startTime,
           endTime: payload.endTime,
           graceMinutes: payload.graceMinutes,
-          breakStartTime: payload.breakStartTime || null,
-          breakEndTime: payload.breakEndTime || null,
+          breakMinutes: payload.breakMinutes,
           updatedAt: new Date(),
         },
         tx

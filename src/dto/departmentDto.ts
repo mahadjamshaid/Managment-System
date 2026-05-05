@@ -8,8 +8,6 @@ const toShiftResponse = (shift: ShiftRow | null) => {
   const analysis = analyzeShiftTiming({
     startTime: shift.startTime,
     endTime: shift.endTime,
-    breakStartTime: shift.breakStartTime,
-    breakEndTime: shift.breakEndTime,
   });
 
   return {
