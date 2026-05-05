@@ -1,4 +1,4 @@
-﻿import { Request, Response } from "express";
+import { Request, Response } from "express";
 import { db } from "../db/index.js";
 import { admins, employees } from "../db/schema.js";
 import { eq } from "drizzle-orm";
@@ -59,9 +59,12 @@ export const login = async (req: Request, res: Response) => {
     );
 
     res.json({
+      success: true,
       message: "Login successful",
-      token,
-      role: role
+      data: {
+        token,
+        role: role
+      }
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -99,6 +102,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
     }
 
     res.json({
+      success: true,
       message: "If email exists, reset link sent",
     });
   } catch (error) {
@@ -112,7 +116,10 @@ export const resetPassword = async (req: Request, res: Response) => {
 
   try {
     await authService.resetUserPassword(token, newPassword);
-    res.json({ message: "Password reset successful" });
+    res.json({ 
+      success: true,
+      message: "Password reset successful" 
+    });
   } catch (error: any) {
     if (error.message === "Invalid token" || error.message === "Token expired") {
       return res.status(400).json({ error: error.message });
