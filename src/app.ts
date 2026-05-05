@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/authRoute.js";
 import employeeRoutes from "./routes/employeeRoute.js";
@@ -44,9 +44,14 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.LOCAL_FRONTEND_URL,
+].filter((origin): origin is string => Boolean(origin));
+
 app.use(cors({
-  origin:"http://localhost:5173",
-  credentials:true,
+  origin: allowedOrigins,
+  credentials: true,
 }));
 app.use(express.json());
 
