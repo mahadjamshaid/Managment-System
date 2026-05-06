@@ -5,6 +5,7 @@ export interface AttendanceResponse {
   employeeId?: number;
   employeeName?: string;
   employeeDepartment?: number;
+  attendanceDate: string;
   date: string;
   status: string;
   // Display fields
@@ -18,12 +19,14 @@ export interface AttendanceResponse {
 }
 
 export const toAttendanceResponse = (record: any, extra?: any): AttendanceResponse => {
+  const finalDate = record.attendanceDate || record.date;
   return {
     id: record.id ?? null,
     employeeId: record.employeeId ?? extra?.employeeId,
     employeeName: extra?.employeeName,
     employeeDepartment: extra?.employeeDepartment,
-    date: record.attendanceDate || record.date,
+    attendanceDate: finalDate,
+    date: finalDate,
     status: record.status ?? "Absent",
     // PHASE 1: Format at the edge
     checkInTime: formatPKTDateTime(record.checkInTime),
