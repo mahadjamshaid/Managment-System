@@ -3,9 +3,9 @@ import { z } from "zod";
 export const attendanceCorrectionSchema = z.object({
   employeeId: z.number().min(1, "Employee ID is required"),
   date: z.string().min(1, "Date is required").regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
-  checkInTime: z.string().datetime().nullable().optional(),
-  checkOutTime: z.string().datetime().nullable().optional(),
-  adminStatus: z.enum(["Absent", "OnLeave"]).nullable().optional(),
+  checkInTime: z.string().datetime().optional(),
+  checkOutTime: z.string().datetime().optional(),
+  adminStatus: z.enum(["Absent", "OnLeave"]).optional(),
   reason: z.string().optional(),
 })
 .refine((data) => {

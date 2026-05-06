@@ -3,6 +3,7 @@ import { attendanceCorrectionSchema } from "../schemas/attendanceCorrection.sche
 import { AttendanceCorrectionService } from "../services/AttendanceCorrectionService.js";
 
 export const correctAttendance = async (req: Request, res: Response, next: NextFunction) => {
+  console.log("DEBUG: Attendance Correction Payload:", JSON.stringify(req.body, null, 2));
   try {
     const parsed = attendanceCorrectionSchema.safeParse(req.body);
 

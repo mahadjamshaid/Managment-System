@@ -9,6 +9,10 @@ export class AttendanceCorrectionService {
   static async correctAttendance(input: AttendanceCorrectionInput) {
     const { employeeId, date, checkInTime, checkOutTime, adminStatus } = input;
 
+    if (!employeeId || !date) {
+      throw new Error("Missing required fields: employeeId and date are mandatory.");
+    }
+
     // 1. FETCH CONTEXT
     const [existingRecord] = await db
       .select()
