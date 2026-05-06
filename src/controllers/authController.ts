@@ -79,11 +79,11 @@ export const forgotPassword = async (req: Request, res: Response) => {
     const token = await authService.generateResetToken(email);
 
     if (token) {
-      const frontendUrl = process.env.FRONTEND_URL;
+      const frontendUrl = (process.env.FRONTEND_URL || "").replace(/['"]/g, "").trim();
 
       if (!frontendUrl) {
         console.error("FRONTEND_URL is not defined in .env");
-        return res.status(500).json({ error: "Server configuration error" });
+        return res.status(500).json({ error: "Server configuration error: FRONTEND_URL missing" });
       }
 
       const resetLink = `${frontendUrl}/reset-password/${token}`;
@@ -105,9 +105,12 @@ export const forgotPassword = async (req: Request, res: Response) => {
       success: true,
       message: "If email exists, reset link sent",
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Forgot password error:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ 
+      error: "Internal server error", 
+      message: error.message || "An unexpected error occurred"
+    });
   }
 };
 
