@@ -55,7 +55,15 @@ export class AttendanceCorrectionService {
     // Snapshot Resolution Logic: 
     // IF snapshot exists and (Employee and Date haven't changed) -> KEEP IT
     // ELSE -> Fetch from employeeData (current shift rules)
-    const contextChanged = existingRecord && (existingRecord.employeeId !== employeeId || existingRecord.attendanceDate !== date);
+    
+    // Hardened check: Ensure we compare only the YYYY-MM-DD part of the date
+    const existingDate = existingRecord?.attendanceDate?.split('T')[0];
+    const inputDate = date?.split('T')[0];
+    
+    const contextChanged = existingRecord && (
+      existingRecord.employeeId !== employeeId || 
+      existingDate !== inputDate
+    );
     
     if (!finalRequiredWorkMinutes || !finalCheckoutGraceMinutes || contextChanged) {
       finalRequiredWorkMinutes = employeeData.requiredWorkMinutes;
@@ -75,7 +83,7 @@ export class AttendanceCorrectionService {
           employeeData.graceMinutes
         );
 
-        if (pktCheckOut) {
+        if (pktCheckOut && finalCheckInStatus) {
           finalWorkMinutes = calculateWorkMinutes(
             pktCheckIn,
             pktCheckOut,
@@ -87,9 +95,14 @@ export class AttendanceCorrectionService {
             finalRequiredWorkMinutes || 480,
             finalCheckoutGraceMinutes || 15
           );
-        } else {
+        } else if (finalCheckInStatus) {
           // If only check-in exists, it's an active session or a manual check-in entry
           finalStatus = finalCheckInStatus;
+          finalWorkMinutes = null;
+        } else {
+          // No check-in status derived (e.g. check-in missing but check-out provided, 
+          // or just partial record edit)
+          finalStatus = "Absent";
           finalWorkMinutes = null;
         }
       } else if (pktCheckOut && !pktCheckIn) {
