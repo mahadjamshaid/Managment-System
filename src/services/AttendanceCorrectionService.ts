@@ -23,6 +23,8 @@ export class AttendanceCorrectionService {
         startTime: shift.startTime,
         graceMinutes: shift.graceMinutes,
         breakMinutes: shift.breakMinutes,
+        requiredWorkMinutes: shift.requiredWorkMinutes,
+        checkoutGraceMinutes: shift.checkoutGraceMinutes,
       })
       .from(employees)
       .innerJoin(department, eq(employees.departmentId, department.id))
@@ -47,6 +49,18 @@ export class AttendanceCorrectionService {
     let finalStatus: string = existingRecord?.status || "Present";
     let finalCheckInStatus: string | null = existingRecord?.checkInStatus || null;
     let finalWorkMinutes: number | null = existingRecord?.workMinutes || null;
+    let finalRequiredWorkMinutes: number | null = existingRecord?.requiredWorkMinutes || null;
+    let finalCheckoutGraceMinutes: number | null = existingRecord?.checkoutGraceMinutes || null;
+
+    // Snapshot Resolution Logic: 
+    // IF snapshot exists and (Employee and Date haven't changed) -> KEEP IT
+    // ELSE -> Fetch from employeeData (current shift rules)
+    const contextChanged = existingRecord && (existingRecord.employeeId !== employeeId || existingRecord.attendanceDate !== date);
+    
+    if (!finalRequiredWorkMinutes || !finalCheckoutGraceMinutes || contextChanged) {
+      finalRequiredWorkMinutes = employeeData.requiredWorkMinutes;
+      finalCheckoutGraceMinutes = employeeData.checkoutGraceMinutes;
+    }
 
     if (mode === "FULL_OVERRIDE") {
       // FULL_OVERRIDE: Absolute administrative truth
@@ -67,7 +81,12 @@ export class AttendanceCorrectionService {
             pktCheckOut,
             employeeData.breakMinutes
           );
-          finalStatus = deriveFinalStatus(finalCheckInStatus, finalWorkMinutes);
+          finalStatus = deriveFinalStatus(
+            finalCheckInStatus as "Present" | "Late", 
+            finalWorkMinutes,
+            finalRequiredWorkMinutes || 480,
+            finalCheckoutGraceMinutes || 15
+          );
         } else {
           // If only check-in exists, it's an active session or a manual check-in entry
           finalStatus = finalCheckInStatus;
@@ -101,6 +120,8 @@ export class AttendanceCorrectionService {
       checkInStatus: finalCheckInStatus,
       status: finalStatus,
       workMinutes: finalWorkMinutes,
+      requiredWorkMinutes: finalRequiredWorkMinutes,
+      checkoutGraceMinutes: finalCheckoutGraceMinutes,
       updatedAt: getCurrentPKTTime(),
     };
 

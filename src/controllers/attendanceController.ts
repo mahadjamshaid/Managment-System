@@ -247,6 +247,8 @@ export const employeeCheckIn = async (req: Request, res: Response, next: NextFun
         startTime: shift.startTime,
         graceMinutes: shift.graceMinutes,
         breakMinutes: shift.breakMinutes,
+        requiredWorkMinutes: shift.requiredWorkMinutes,
+        checkoutGraceMinutes: shift.checkoutGraceMinutes,
       })
       .from(department)
       .leftJoin(shift, eq(department.shiftId, shift.id))
@@ -261,7 +263,14 @@ export const employeeCheckIn = async (req: Request, res: Response, next: NextFun
     const startTime = employeeDepartment.startTime!;
     const graceMinutes = employeeDepartment.graceMinutes ?? 0;
     const breakMinutes = employeeDepartment.breakMinutes ?? 0;
+    const requiredWorkMinutes = employeeDepartment.requiredWorkMinutes;
+    const checkoutGraceMinutes = employeeDepartment.checkoutGraceMinutes;
     const shiftId = employeeDepartment.shiftId!;
+    
+    // Strict Guard
+    if (requiredWorkMinutes == null || checkoutGraceMinutes == null) {
+      return res.status(400).json({ success: false, message: "Incomplete shift configuration. Please contact admin." });
+    }
     
     const derivedStatus = deriveCheckInStatus(checkInTime, startTime, graceMinutes);
 
@@ -276,6 +285,8 @@ export const employeeCheckIn = async (req: Request, res: Response, next: NextFun
         shiftStartTime: startTime,
         graceMinutes: graceMinutes,
         breakMinutes: breakMinutes ?? 0,
+        requiredWorkMinutes: requiredWorkMinutes,
+        checkoutGraceMinutes: checkoutGraceMinutes,
         checkInStatus: derivedStatus,
         status: derivedStatus,
         checkInTime: checkInTime,
@@ -370,7 +381,36 @@ export const employeeCheckOut = async (req: Request, res: Response, next: NextFu
 
     // 3. Compute Final Status via Policy
     const workMinutes = calculateWorkMinutes(checkInTime, checkOutDate, breakMinutes);
-    const finalStatus = deriveFinalStatus(checkInStatus, workMinutes);
+    
+    // Strict Defensive Fallback for legacy records
+    if (existingRecord.requiredWorkMinutes == null && existingRecord.checkoutGraceMinutes == null) {
+      // Fallback only if snapshot is missing
+      const [employeeShift] = await db
+        .select({
+          requiredWorkMinutes: shift.requiredWorkMinutes,
+          checkoutGraceMinutes: shift.checkoutGraceMinutes,
+        })
+        .from(shift)
+        .where(eq(shift.id, existingRecord.shiftId))
+        .limit(1);
+      
+      if (!employeeShift) {
+        return res.status(400).json({ success: false, message: "Cannot resolve shift configuration for check-out." });
+      }
+
+      existingRecord.requiredWorkMinutes = employeeShift.requiredWorkMinutes;
+      existingRecord.checkoutGraceMinutes = employeeShift.checkoutGraceMinutes;
+    }
+
+    const reqMin = existingRecord.requiredWorkMinutes ?? 480;
+    const graceMin = existingRecord.checkoutGraceMinutes ?? 15;
+
+    const finalStatus = deriveFinalStatus(
+      checkInStatus as "Present" | "Late", 
+      workMinutes,
+      reqMin,
+      graceMin
+    );
 
     const [updated] = await db
       .update(attendance)

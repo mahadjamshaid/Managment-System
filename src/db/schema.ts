@@ -7,6 +7,8 @@ export const shift = pgTable("shift", {
   endTime: time("end_time").notNull(),
   graceMinutes: integer("grace_minutes").notNull(),
   breakMinutes: integer("break_minutes").notNull().default(0),
+  requiredWorkMinutes: integer("required_work_minutes").notNull().default(480),
+  checkoutGraceMinutes: integer("checkout_grace_minutes").notNull().default(15),
   createdAt: timestamp().defaultNow().notNull(),
   updatedAt: timestamp().defaultNow().notNull(),
 })
@@ -48,6 +50,8 @@ export const attendance = pgTable("attendance", {
   checkInStatus: varchar("check_in_status", { length: 50 }), // "Present" or "Late"
   status: varchar("status", { length: 50 }).notNull(), // "Present", "Late", "HalfDay", "ShortDay", "Absent"
   workMinutes: integer("work_minutes"), // Stored work duration
+  requiredWorkMinutes: integer("required_work_minutes"),
+  checkoutGraceMinutes: integer("checkout_grace_minutes"),
   createdAt: timestamp().defaultNow().notNull(),
   updatedAt: timestamp().defaultNow().notNull(),
 }, (table) => [

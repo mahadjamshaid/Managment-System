@@ -58,22 +58,22 @@ export const calculateWorkMinutes = (
  * Derives the final attendance status based on work duration and initial check-in.
  */
 export const deriveFinalStatus = (
-  checkInStatus: string,
-  workMinutes: number
+  checkInStatus: "Present" | "Late",
+  workMinutes: number,
+  requiredWorkMinutes: number,
+  checkoutGraceMinutes: number
 ): AttendanceStatus => {
-  const FULL_DAY_MINUTES = 8 * 60; // 8 hours
-  const HALF_DAY_MINUTES = 5 * 60; // 5 hours
-  const SHORT_DAY_MINUTES = 2 * 60; // 2 hours
+  const fullDayThreshold = Math.max(0, requiredWorkMinutes - checkoutGraceMinutes);
 
-  if (workMinutes >= FULL_DAY_MINUTES) {
-    return checkInStatus === "Late" ? "Late" : "Present";
+  if (workMinutes >= fullDayThreshold) {
+    return checkInStatus;
   }
   
-  if (workMinutes >= HALF_DAY_MINUTES) {
+  if (workMinutes >= 300) {
     return "HalfDay";
   }
 
-  if (workMinutes >= SHORT_DAY_MINUTES) {
+  if (workMinutes >= 120) {
     return "ShortDay";
   }
 
