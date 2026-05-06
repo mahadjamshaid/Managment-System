@@ -107,7 +107,7 @@ export const getAllAttendance = async (req: Request, res: Response, next: NextFu
       .offset(offset);
 
     // Transform data to ensure attendanceDate is always present for the frontend
-    const sanitizedRecords = data.map(record => ({
+    const sanitizedRecords = data.map(record => toAttendanceResponse({
       ...record,
       attendanceDate: record.attendanceDate || (record.legacyDate ? record.legacyDate.toString() : getPKTDateString())
     }));
@@ -455,10 +455,10 @@ export const getEmployeeTodayAttendance = async (req: Request, res: Response, ne
       return res.status(200).json({
         success: true,
         message: "Active session found",
-        data: {
+        data: toAttendanceResponse({
           ...activeSession,
           status: activeSession.checkInStatus || activeSession.status // Live status
-        },
+        }),
       });
     }
 
@@ -474,7 +474,7 @@ export const getEmployeeTodayAttendance = async (req: Request, res: Response, ne
     return res.status(200).json({
       success: true,
       message: todayRecord ? "Today's attendance" : "No attendance found",
-      data: todayRecord || null,
+      data: todayRecord ? toAttendanceResponse(todayRecord) : null,
     });
   } catch (error) {
     console.error("Error fetching attendance for employee today:", error);
@@ -510,7 +510,7 @@ export const getMyRecord = async (
     return res.status(200).json({
       success: true,
       message: "Attendance records fetched",
-      data: record,
+      data: record.map(r => toAttendanceResponse(r)),
     });
 
   } catch (error) {
@@ -562,7 +562,9 @@ export const getEmployeeHistory = async (req: Request, res: Response, next: Next
       .where(and(...conditions))
       .orderBy(desc(attendance.attendanceDate));
 
-    return res.status(200).json({ success: true, data: records });
+    const mapped = records.map(r => toAttendanceResponse(r));
+
+    return res.status(200).json({ success: true, data: mapped });
   } catch (error) {
     next(error);
   }
