@@ -19,6 +19,8 @@ const departmentWithShiftSelect = {
     endTime: shift.endTime,
     graceMinutes: shift.graceMinutes,
     breakMinutes: shift.breakMinutes,
+    requiredWorkMinutes: shift.requiredWorkMinutes,
+    checkoutGraceMinutes: shift.checkoutGraceMinutes,
     createdAt: shift.createdAt,
     updatedAt: shift.updatedAt,
   },

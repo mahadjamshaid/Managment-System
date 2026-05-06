@@ -49,6 +49,8 @@ export const departmentService = {
           endTime: payload.endTime,
           graceMinutes: payload.graceMinutes,
           breakMinutes: payload.breakMinutes || 0,
+          requiredWorkMinutes: payload.requiredWorkMinutes,
+          checkoutGraceMinutes: payload.checkoutGraceMinutes,
         },
         tx
       );
@@ -148,6 +150,8 @@ export const departmentService = {
           endTime: payload.endTime,
           graceMinutes: payload.graceMinutes,
           breakMinutes: payload.breakMinutes,
+          requiredWorkMinutes: payload.requiredWorkMinutes,
+          checkoutGraceMinutes: payload.checkoutGraceMinutes,
           updatedAt: getCurrentPKTTime(),
         },
         tx
