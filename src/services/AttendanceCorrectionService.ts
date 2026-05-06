@@ -43,8 +43,8 @@ export class AttendanceCorrectionService {
     }
 
     // 3. CONSTRUCT FINAL STATE (Decide First, Write Once)
-    const pktCheckIn = checkInTime ? toPKT(new Date(checkInTime)) : (existingRecord?.checkInTime ? new Date(existingRecord.checkInTime) : null);
-    const pktCheckOut = checkOutTime ? toPKT(new Date(checkOutTime)) : (existingRecord?.checkOutTime ? new Date(existingRecord.checkOutTime) : null);
+    const pktCheckIn = checkInTime ? toPKT(checkInTime) : (existingRecord?.checkInTime ? toPKT(existingRecord.checkInTime) : null);
+    const pktCheckOut = checkOutTime ? toPKT(checkOutTime) : (existingRecord?.checkOutTime ? toPKT(existingRecord.checkOutTime) : null);
 
     let finalStatus: string = existingRecord?.status || "Present";
     let finalCheckInStatus: string | null = existingRecord?.checkInStatus || null;
@@ -55,15 +55,7 @@ export class AttendanceCorrectionService {
     // Snapshot Resolution Logic: 
     // IF snapshot exists and (Employee and Date haven't changed) -> KEEP IT
     // ELSE -> Fetch from employeeData (current shift rules)
-    
-    // Hardened check: Ensure we compare only the YYYY-MM-DD part of the date
-    const existingDate = existingRecord?.attendanceDate?.split('T')[0];
-    const inputDate = date?.split('T')[0];
-    
-    const contextChanged = existingRecord && (
-      existingRecord.employeeId !== employeeId || 
-      existingDate !== inputDate
-    );
+    const contextChanged = existingRecord && (existingRecord.employeeId !== employeeId || existingRecord.attendanceDate !== date);
     
     if (!finalRequiredWorkMinutes || !finalCheckoutGraceMinutes || contextChanged) {
       finalRequiredWorkMinutes = employeeData.requiredWorkMinutes;
@@ -83,7 +75,7 @@ export class AttendanceCorrectionService {
           employeeData.graceMinutes
         );
 
-        if (pktCheckOut && finalCheckInStatus) {
+        if (pktCheckOut) {
           finalWorkMinutes = calculateWorkMinutes(
             pktCheckIn,
             pktCheckOut,
@@ -95,14 +87,9 @@ export class AttendanceCorrectionService {
             finalRequiredWorkMinutes || 480,
             finalCheckoutGraceMinutes || 15
           );
-        } else if (finalCheckInStatus) {
+        } else {
           // If only check-in exists, it's an active session or a manual check-in entry
           finalStatus = finalCheckInStatus;
-          finalWorkMinutes = null;
-        } else {
-          // No check-in status derived (e.g. check-in missing but check-out provided, 
-          // or just partial record edit)
-          finalStatus = "Absent";
           finalWorkMinutes = null;
         }
       } else if (pktCheckOut && !pktCheckIn) {

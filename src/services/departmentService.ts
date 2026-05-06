@@ -9,6 +9,7 @@ import {
   AssignShiftBodyType
 } from "../types/departmentTypes.js";
 import { db } from "../db/index.js";
+import { getCurrentPKTTime } from "../utils/time.utils.js";
 
 export const departmentService = {
   async getAllDepartments() {
@@ -97,7 +98,7 @@ export const departmentService = {
 
         await shiftRepo.updateShiftById(
           dept.shiftId,
-          { name: buildShiftName(normalizedName), updatedAt: new Date() },
+          { name: buildShiftName(normalizedName), updatedAt: getCurrentPKTTime() },
           tx
         );
       }
@@ -109,7 +110,7 @@ export const departmentService = {
           ...(payload.description !== undefined && {
             description: payload.description.trim(),
           }),
-          updatedAt: new Date(),
+          updatedAt: getCurrentPKTTime(),
         },
         tx
       );
@@ -147,7 +148,7 @@ export const departmentService = {
           endTime: payload.endTime,
           graceMinutes: payload.graceMinutes,
           breakMinutes: payload.breakMinutes,
-          updatedAt: new Date(),
+          updatedAt: getCurrentPKTTime(),
         },
         tx
       );
@@ -162,7 +163,7 @@ export const departmentService = {
 
       await departmentRepo.updateDepartmentById(
         id,
-        { updatedAt: new Date() },
+        { updatedAt: getCurrentPKTTime() },
         tx
       );
 

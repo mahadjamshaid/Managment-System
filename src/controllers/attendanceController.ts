@@ -336,7 +336,7 @@ export const employeeCheckOut = async (req: Request, res: Response, next: NextFu
       });
     }
 
-    const checkInTime = new Date(existingRecord.checkInTime!);
+    const checkInTime = toPKT(existingRecord.checkInTime!);
 
     if (checkOutDate < checkInTime) {
       return res.status(400).json({ success: false, message: "Check-out time cannot be before check-in time" });

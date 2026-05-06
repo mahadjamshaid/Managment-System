@@ -3,6 +3,7 @@ import { eq, or } from "drizzle-orm";
 import crypto from "crypto";
 import bcrypt from "bcrypt";
 import { db } from "../db/index.js";
+import { getCurrentPKTTime } from "../utils/time.utils.js";
 
 export const findUserByEmail = async (email: string) => {
   // Check admins first
@@ -31,7 +32,7 @@ export const generateResetToken = async (email: string) => {
   const { user, type } = result;
   const rawToken = crypto.randomBytes(32).toString("hex");
   const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
-  const expiry = new Date(Date.now() + 1000 * 60 * 15); // 15 minutes
+  const expiry = new Date(getCurrentPKTTime().getTime() + 1000 * 60 * 15); // 15 minutes
 
   const table = type === "admin" ? admins : employees;
 
@@ -77,7 +78,7 @@ export const resetUserPassword = async (rawToken: string, newPassword: string) =
 
   const { user, type } = result;
 
-  if (!user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+  if (!user.resetTokenExpiry || user.resetTokenExpiry < getCurrentPKTTime()) {
     throw new Error("Token expired");
   }
 

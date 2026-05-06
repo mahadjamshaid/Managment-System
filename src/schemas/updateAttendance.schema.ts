@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getCurrentPKTTime, toPKT } from "../utils/time.utils.js";
 
 export const updateAttendanceSchema = z.object({
     checkInTime: z.string().datetime().optional(),
@@ -26,10 +27,10 @@ export const updateAttendanceSchema = z.object({
 
     .refine((data) => {
         // prevent future timestamps
-        const now = new Date();
+        const now = getCurrentPKTTime();
 
-        if (data.checkInTime && new Date(data.checkInTime) > now) return false;
-        if (data.checkOutTime && new Date(data.checkOutTime) > now) return false;
+        if (data.checkInTime && toPKT(data.checkInTime) > now) return false;
+        if (data.checkOutTime && toPKT(data.checkOutTime) > now) return false;
 
         return true;
     }, {
