@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { db } from "../db/index.js";
-import { admins, employees } from "../db/schema.js";
+import { admins, employees, department } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -156,9 +156,28 @@ export const signup = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "User with this email already exists" });
     }
 
-    // For now, we'll use departmentId 1 as a fallback if not provided
-    // This allows self-signup to work even if the frontend hasn't been updated yet
-    let finalDepartmentId = departmentId ? Number(departmentId) : 1;
+    // For now, we'll try to find a valid departmentId
+    let finalDepartmentId = departmentId ? Number(departmentId) : null;
+
+    if (!finalDepartmentId) {
+      // Fetch the first available department
+      const [firstDept] = await db.select({ id: department.id }).from(department).limit(1);
+      if (!firstDept) {
+        return res.status(400).json({ error: "No departments found. Admin must create a department first." });
+      }
+      finalDepartmentId = firstDept.id;
+    } else {
+      // Verify the provided departmentId exists
+      const [exists] = await db.select({ id: department.id }).from(department).where(eq(department.id, finalDepartmentId)).limit(1);
+      if (!exists) {
+        // Fallback to first available if provided one is invalid
+        const [firstDept] = await db.select({ id: department.id }).from(department).limit(1);
+        if (!firstDept) {
+          return res.status(400).json({ error: "Provided department ID is invalid and no other departments exist." });
+        }
+        finalDepartmentId = firstDept.id;
+      }
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
