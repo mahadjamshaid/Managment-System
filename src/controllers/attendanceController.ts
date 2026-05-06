@@ -3,9 +3,10 @@ import { db } from "../db/index.js";
 import { attendance, department, employees, shift } from "../db/schema.js";
 import { eq, and, count, desc, isNull, between } from "drizzle-orm";
 import { paginationSchema } from "../schemas/paginationSchema.js";
-import { getCurrentPKTTime, getPKTDateString, toPKT } from "../utils/time.utils.js";
+import { getCurrentPKTTime, getPKTDateString, toPKT, formatPKTDateTime } from "../utils/time.utils.js";
 import { deriveCheckInStatus, calculateWorkMinutes, deriveFinalStatus } from "../utils/attendance.policy.js";
 import { getAttendanceStatusForDate } from "../services/attendanceService.js";
+import { toAttendanceResponse } from "../dto/attendanceDto.js";
 
 // CHECK IN 
 // CHECK IN 
@@ -51,16 +52,16 @@ export const getAllAttendance = async (req: Request, res: Response, next: NextFu
         .where(eq(employees.status, "active"))
         .orderBy(employees.name);
 
-      const mapped = allEmployees.map(row => ({
-        id: row.attendanceId ?? null,
+      const mapped = allEmployees.map(row => toAttendanceResponse({
+        id: row.attendanceId,
         employeeId: row.employeeId,
+        attendanceDate: row.date ?? filterDate,
+        status: row.status,
+        checkInTime: row.checkInTime,
+        checkOutTime: row.checkOutTime,
+      }, {
         employeeName: row.employeeName,
-        employeeDepartment: row.employeeDepartment,
-        date: row.date ?? filterDate,
-        // TODO: Remove this fallback once CRON-based Absent records are stored in DB
-        status: row.status ?? "Absent",
-        checkInTime: row.checkInTime ?? null,
-        checkOutTime: row.checkOutTime ?? null,
+        employeeDepartment: row.employeeDepartment
       }));
 
       // Apply status filter after mapping (so "Absent" filter works too)
@@ -426,7 +427,7 @@ export const employeeCheckOut = async (req: Request, res: Response, next: NextFu
     return res.status(200).json({
       success: true,
       message: "Checked out successfully",
-      data: updated
+      data: toAttendanceResponse(updated)
     });
   } catch (error) {
     console.error("Error during check-out:", error);
@@ -586,9 +587,13 @@ export const getDepartmentAttendance = async (req: Request, res: Response, next:
       .leftJoin(attendance, and(eq(attendance.employeeId, employees.id), eq(attendance.attendanceDate, date)))
       .where(and(eq(employees.departmentId, departmentId), eq(employees.status, "active")));
 
-    const mapped = records.map(r => ({
-      ...r,
-      status: r.id ? r.status : "Absent"
+    const mapped = records.map(r => toAttendanceResponse({
+      id: r.id,
+      status: r.status,
+      checkInTime: r.checkInTime,
+      checkOutTime: r.checkOutTime,
+    }, {
+      employeeName: r.employeeName
     }));
 
     return res.status(200).json({ success: true, data: mapped });

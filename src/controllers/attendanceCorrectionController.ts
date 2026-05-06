@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { attendanceCorrectionSchema } from "../schemas/attendanceCorrection.schema.js";
 import { AttendanceCorrectionService } from "../services/AttendanceCorrectionService.js";
+import { toAttendanceResponse } from "../dto/attendanceDto.js";
 
 export const correctAttendance = async (req: Request, res: Response, next: NextFunction) => {
   console.log("DEBUG: Attendance Correction Payload:", JSON.stringify(req.body, null, 2));
@@ -20,7 +21,7 @@ export const correctAttendance = async (req: Request, res: Response, next: NextF
     return res.status(200).json({
       success: true,
       message: "Attendance corrected successfully",
-      data: result,
+      data: toAttendanceResponse(result),
     });
   } catch (error: any) {
     console.error("Error in correctAttendance controller:", error);

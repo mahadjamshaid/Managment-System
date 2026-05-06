@@ -44,3 +44,15 @@ export const getPKTDateString = (date?: Date | string): string => {
 export const normalizeToPKT = (date: Date): Date => {
   return toPKT(date);
 };
+
+/**
+ * Returns a formatted PKT string for UI display.
+ * Format: "MM/DD/YYYY, HH:mm:ss"
+ */
+export const formatPKTDateTime = (date: Date | string | null | undefined): string | null => {
+  if (!date) return null;
+  return new Date(date).toLocaleString("en-US", {
+    timeZone: "Asia/Karachi",
+    hour12: false,
+  });
+};
