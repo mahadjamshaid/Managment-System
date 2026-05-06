@@ -3,7 +3,7 @@ import { db } from "../db/index.js";
 import { attendance, department, employees, shift } from "../db/schema.js";
 import { eq, and, count, desc, isNull, between } from "drizzle-orm";
 import { paginationSchema } from "../schemas/paginationSchema.js";
-import { getCurrentPKTTime, getPKTDateString, toPKT, formatPKTDateTime } from "../utils/time.utils.js";
+import { getCurrentPKTTime, getPKTDateString } from "../utils/time.utils.js";
 import { deriveCheckInStatus, calculateWorkMinutes, deriveFinalStatus } from "../utils/attendance.policy.js";
 import { getAttendanceStatusForDate } from "../services/attendanceService.js";
 import { toAttendanceResponse } from "../dto/attendanceDto.js";
@@ -186,7 +186,7 @@ export const getAttendanceByEmployeeId = async (req: Request, res: Response, nex
     return res.status(200).json({
       success: true,
       message: "Employee attendance records fetched",
-      data: records
+      data: records.map(r => toAttendanceResponse(r))
     });
   } catch (error) {
     console.error("Error fetching attendance by employee ID:", error);
@@ -300,7 +300,7 @@ export const employeeCheckIn = async (req: Request, res: Response, next: NextFun
     res.status(201).json({
       success: true,
       message: "Checked in successfully",
-      data: newRecord
+      data: toAttendanceResponse(newRecord)
     });
   } catch (error) {
     console.error("Error during check-in:", error);
@@ -338,7 +338,7 @@ export const employeeCheckOut = async (req: Request, res: Response, next: NextFu
       });
     }
 
-    const checkInTime = toPKT(existingRecord.checkInTime!);
+    const checkInTime = existingRecord.checkInTime!;
 
     if (checkOutDate < checkInTime) {
       return res.status(400).json({ success: false, message: "Check-out time cannot be before check-in time" });
@@ -604,6 +604,5 @@ export const getDepartmentAttendance = async (req: Request, res: Response, next:
     next(error);
   }
 };
-
 
 

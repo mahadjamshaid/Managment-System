@@ -14,8 +14,28 @@ export const getCurrentPKTTime = (): Date => {
   );
 };
 
+const pad = (value: number): string => value.toString().padStart(2, "0");
+
+const formatStoredPKTDate = (date: Date): string => {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
+const toStoredPKTISOString = (date: Date): string => {
+  const utcTime = Date.UTC(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    date.getHours() - 5,
+    date.getMinutes(),
+    date.getSeconds(),
+    date.getMilliseconds()
+  );
+
+  return new Date(utcTime).toISOString();
+};
+
 /**
- * Converts any date or string into a PKT Date object.
+ * Converts an absolute instant into a PKT wall-clock Date object for storage.
  */
 export const toPKT = (date: Date | string): Date => {
   return new Date(
@@ -28,14 +48,10 @@ export const toPKT = (date: Date | string): Date => {
  * Use this for the 'attendanceDate' snapshot field.
  */
 export const getPKTDateString = (date?: Date | string): string => {
-  const targetDate = date ? toPKT(date) : getCurrentPKTTime();
-  // Using Intl to ensure YYYY-MM-DD format regardless of locale
-  return new Intl.DateTimeFormat('en-CA', { 
-    timeZone: "Asia/Karachi", 
-    year: 'numeric', 
-    month: '2-digit', 
-    day: '2-digit' 
-  }).format(targetDate);
+  if (!date) return formatStoredPKTDate(getCurrentPKTTime());
+
+  const targetDate = date instanceof Date ? date : toPKT(date);
+  return formatStoredPKTDate(targetDate);
 };
 
 /**
@@ -47,15 +63,28 @@ export const normalizeToPKT = (date: Date): Date => {
 
 /**
  * Returns a formatted PKT string for UI display.
- * Format: "MM/DD/YYYY, HH:mm:ss"
+ * The attendance table stores PKT wall-clock timestamps, so display is built
+ * from stored clock components instead of converting the timestamp again.
  */
 export const formatPKTDateTime = (date: Date | string | null | undefined): string | null => {
   if (!date) return null;
-  return new Date(date).toLocaleTimeString("en-US", {
-    timeZone: "Asia/Karachi",
-    hour12: true,
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+
+  const targetDate = date instanceof Date ? date : toPKT(date);
+  const hours = targetDate.getHours();
+  const minutes = targetDate.getMinutes();
+  const period = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours % 12 || 12;
+
+  return `${pad(displayHours)}:${pad(minutes)} ${period}`;
+};
+
+/**
+ * Converts a stored PKT wall-clock timestamp into the real UTC instant that
+ * represents that PKT time. This keeps edit forms stable on Vercel/UTC.
+ */
+export const toPKTRawISOString = (date: Date | string | null | undefined): string | null => {
+  if (!date) return null;
+
+  const targetDate = date instanceof Date ? date : toPKT(date);
+  return toStoredPKTISOString(targetDate);
 };

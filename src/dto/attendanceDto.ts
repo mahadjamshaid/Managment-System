@@ -1,4 +1,4 @@
-import { formatPKTDateTime } from "../utils/time.utils.js";
+import { formatPKTDateTime, toPKTRawISOString } from "../utils/time.utils.js";
 
 export interface AttendanceResponse {
   id: number | null;
@@ -15,6 +15,8 @@ export interface AttendanceResponse {
   checkInTimeRaw: string | null;
   checkOutTimeRaw: string | null;
   workMinutes: number | null;
+  requiredWorkMinutes: number | null;
+  checkoutGraceMinutes: number | null;
   adminStatus: string | null;
 }
 
@@ -31,10 +33,12 @@ export const toAttendanceResponse = (record: any, extra?: any): AttendanceRespon
     // PHASE 1: Format at the edge
     checkInTime: formatPKTDateTime(record.checkInTime),
     checkOutTime: formatPKTDateTime(record.checkOutTime),
-    // PHASE 6: Preserve raw ISO for Edit Modal
-    checkInTimeRaw: record.checkInTime ? new Date(record.checkInTime).toISOString() : null,
-    checkOutTimeRaw: record.checkOutTime ? new Date(record.checkOutTime).toISOString() : null,
+    // PHASE 6: Preserve real ISO instants for Edit Modal
+    checkInTimeRaw: toPKTRawISOString(record.checkInTime),
+    checkOutTimeRaw: toPKTRawISOString(record.checkOutTime),
     workMinutes: record.workMinutes ?? null,
+    requiredWorkMinutes: record.requiredWorkMinutes ?? null,
+    checkoutGraceMinutes: record.checkoutGraceMinutes ?? null,
     adminStatus: record.adminStatus ?? null,
   };
 };

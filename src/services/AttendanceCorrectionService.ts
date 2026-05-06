@@ -47,8 +47,8 @@ export class AttendanceCorrectionService {
     }
 
     // 3. CONSTRUCT FINAL STATE (Decide First, Write Once)
-    const pktCheckIn = checkInTime ? toPKT(checkInTime) : (existingRecord?.checkInTime ? toPKT(existingRecord.checkInTime) : null);
-    const pktCheckOut = checkOutTime ? toPKT(checkOutTime) : (existingRecord?.checkOutTime ? toPKT(existingRecord.checkOutTime) : null);
+    const pktCheckIn = checkInTime ? toPKT(checkInTime) : (existingRecord?.checkInTime ?? null);
+    const pktCheckOut = checkOutTime ? toPKT(checkOutTime) : (existingRecord?.checkOutTime ?? null);
 
     let finalStatus: string = existingRecord?.status || "Present";
     let finalCheckInStatus: string | null = existingRecord?.checkInStatus || null;
