@@ -51,8 +51,11 @@ export const normalizeToPKT = (date: Date): Date => {
  */
 export const formatPKTDateTime = (date: Date | string | null | undefined): string | null => {
   if (!date) return null;
-  return new Date(date).toLocaleString("en-US", {
+  return new Date(date).toLocaleTimeString("en-US", {
     timeZone: "Asia/Karachi",
-    hour12: false,
+    hour12: true,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
   });
 };
