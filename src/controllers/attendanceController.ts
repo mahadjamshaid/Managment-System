@@ -37,7 +37,7 @@ export const getAllAttendance = async (req: Request, res: Response, next: NextFu
         .select({
           employeeId: employees.id,
           employeeName: employees.name,
-          employeeDepartment: employees.departmentId,
+          employeeDepartment: department.name,
           attendanceId: attendance.id,
           date: attendance.attendanceDate,
           status: attendance.status,
@@ -45,6 +45,7 @@ export const getAllAttendance = async (req: Request, res: Response, next: NextFu
           checkOutTime: attendance.checkOutTime,
         })
         .from(employees)
+        .leftJoin(department, eq(employees.departmentId, department.id))
         .leftJoin(
           attendance,
           and(eq(attendance.employeeId, employees.id), eq(attendance.attendanceDate, filterDate))

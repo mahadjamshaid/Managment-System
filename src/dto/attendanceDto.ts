@@ -23,8 +23,8 @@ export const toAttendanceResponse = (record: any, extra?: any): AttendanceRespon
   return {
     id: record.id ?? null,
     employeeId: record.employeeId ?? extra?.employeeId,
-    employeeName: extra?.employeeName,
-    employeeDepartment: extra?.employeeDepartment,
+    employeeName: extra?.employeeName || record.employeeName,
+    employeeDepartment: extra?.employeeDepartment || record.employeeDepartment,
     attendanceDate: finalDate,
     date: finalDate,
     status: record.status ?? "Absent",
